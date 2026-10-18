@@ -3,10 +3,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import java.io.IOException;
-import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.audio.AudioFile;
@@ -19,6 +20,7 @@ public class Main {
     public static void main(String[] args){
         Path musicPath = Path.of(System.getProperty("user.home")).resolve("Music");
         Path[] library = {musicPath.resolve("Artists"), musicPath.resolve("Soundtracks")};
+        Path destinationFile = musicPath.resolve("Playlists/playlist.m3u8");
         List<Track> tracks = new ArrayList<>();
         for (int i = 0; i < library.length; i++) {
             if (Files.isDirectory(library[i])) {
@@ -60,8 +62,7 @@ public class Main {
         }
 
         tracks.removeIf(track -> !track.getGenre().contains("J-Pop"));
-
-        try (FileWriter fileWriter = new FileWriter("playlist.m3u8")) {
+        try (BufferedWriter fileWriter = Files.newBufferedWriter(destinationFile, StandardCharsets.UTF_8)) {
             for (Track track : tracks) {
                 fileWriter.write(track.getPath().toString() + "\r\n");
             }
