@@ -1,8 +1,12 @@
 import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
+
 import java.io.IOException;
-import java.nio.file.Path;
+import java.io.FileWriter;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.audio.AudioFile;
@@ -15,6 +19,7 @@ public class Main {
     public static void main(String[] args){
         Path musicPath = Path.of(System.getProperty("user.home")).resolve("Music");
         Path[] library = {musicPath.resolve("Artists"), musicPath.resolve("Soundtracks")};
+        List<Track> tracks = new ArrayList<>();
         for (int i = 0; i < library.length; i++) {
             if (Files.isDirectory(library[i])) {
                 try (Stream<Path> paths = Files.walk(library[i])) {
@@ -30,9 +35,10 @@ public class Main {
                             tag.getFirst(FieldKey.ALBUM_ARTIST).toString(),
                             tag.getFirst(FieldKey.ALBUM).toString(),
                             tag.getFirst(FieldKey.TITLE).toString(),
-                            tag.getFirst(FieldKey.YEAR),
+                            tag.getFirst(FieldKey.YEAR).toString(),
                             tag.getFirst(FieldKey.GENRE).toString()
                         );
+                        tracks.add(track);
                     } catch (CannotReadException e) {
                         System.out.println(file + " couldn't be read");
                     } catch (IOException e) {
@@ -52,5 +58,17 @@ public class Main {
                 System.out.println(library[i] + " is not a valid path");
             }
         }
+
+        tracks.removeIf(track -> !track.getGenre().contains("J-Pop"));
+
+        try (FileWriter fileWriter = new FileWriter("playlist.m3u8")) {
+            for (Track track : tracks) {
+                fileWriter.write(track.getPath().toString() + "\r\n");
+            }
+        } catch (IOException e) {
+            System.err.println("An error occured");
+            e.printStackTrace();
+        }
+        System.out.println("Playlist created");
     }
 }
