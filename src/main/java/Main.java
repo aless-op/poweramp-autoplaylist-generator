@@ -49,15 +49,22 @@ public class Main {
             return;
         }
 
-        // Select music library folders - TODO: Currently hardcoded
-        Path musicPath = Path.of(System.getProperty("user.home")).resolve("Music");
-        Path[] library = { musicPath.resolve("Artists"), musicPath.resolve("Soundtracks") };
+        System.out.println("Add a folder containing music files");
+
+
+        // Select music library folders - TODO: Ask to repeat selection to add multiple locations
+        List<Path> library = new ArrayList<>();
+        int folderSelection = chooser.showOpenDialog(null);
+        if (folderSelection == JFileChooser.APPROVE_OPTION) {
+            Path libraryFolder = chooser.getSelectedFile().toPath();
+            library.add(libraryFolder);
+        } else { input.close(); return;}
 
         // Create list of Track objects with useful tags from every flac file in library - TODO: Allow different file formats (filter by format?)
         List<Track> tracks = new ArrayList<>();
-        for (int i = 0; i < library.length; i++) {
-            if (Files.isDirectory(library[i])) {
-                try (Stream<Path> paths = Files.walk(library[i])) {
+        for (int i = 0; i < library.size(); i++) {
+            if (Files.isDirectory(library.get(i))) {
+                try (Stream<Path> paths = Files.walk(library.get(i))) {
                     Stream<Path> filePaths = paths.filter(Files::isRegularFile);
                     Stream<Path> flacPaths = filePaths.filter(path -> path.toString().endsWith(".flac"));
                     Stream<File> flacFiles = flacPaths.map(Path::toFile);
@@ -90,7 +97,7 @@ public class Main {
                     System.err.println("Error reading directory");
                 }
             } else {
-                System.out.println(library[i] + " is not a valid path");
+                System.out.println(library.get(i) + " is not a valid path");
             }
         }
 

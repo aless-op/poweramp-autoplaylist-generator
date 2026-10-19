@@ -13,22 +13,5 @@
             "vmArgs": "-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Djava.util.logging.config.file=logging.properties",
             "console": "integratedTerminal"
         },
-        {
-            "type": "java",
-            "name": "Current File",
-            "request": "launch",
-            "mainClass": "${file}",
-            "vmArgs": "-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Djava.util.logging.config.file=logging.properties",
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "java",
-            "name": "Main",
-            "request": "launch",
-            "mainClass": "Main",
-            "projectName": "Poweramp Autoplaylist Generator_90f191b4",
-            "vmArgs": "-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Djava.util.logging.config.file=logging.properties",
-            "console": "integratedTerminal"
-        }
     ]
 }
