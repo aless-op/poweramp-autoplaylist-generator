@@ -29,10 +29,12 @@ import org.jaudiotagger.tag.Tag;
 public class Main {
     public static void main(String[] args) {
 
+        // Define filename
         Scanner input = new Scanner(System.in);
         System.out.print("Enter the destination filename: ");
         String filename = input.nextLine() + ".m3u8";
 
+        // Set output location
         JFileChooser chooser = new JFileChooser();
         System.out.println("Choose the destination folder");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -47,10 +49,11 @@ public class Main {
             return;
         }
 
+        // Select music library folders - TODO: Currently hardcoded
         Path musicPath = Path.of(System.getProperty("user.home")).resolve("Music");
         Path[] library = { musicPath.resolve("Artists"), musicPath.resolve("Soundtracks") };
 
-
+        // Create list of Track objects with useful tags from every flac file in library - TODO: Allow different file formats (filter by format?)
         List<Track> tracks = new ArrayList<>();
         for (int i = 0; i < library.length; i++) {
             if (Files.isDirectory(library[i])) {
@@ -91,6 +94,7 @@ public class Main {
             }
         }
 
+        // Start filtering: ask for attribute to filter and its value - TODO: Allow criteria combinations
         Map<String, String> criteria = new HashMap<>();
         System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
         String type = input.nextLine().trim().toLowerCase(Locale.ROOT);
@@ -106,6 +110,8 @@ public class Main {
             .findFirst()
             .orElseThrow();
 
+
+        // Filter tracks list based on the criteria just specified
         tracks.removeIf(track -> {
             try {
                 return !field.get(track).toString().toLowerCase(Locale.ROOT).contains(criteria.get(selectedType).toLowerCase(Locale.ROOT));
@@ -115,6 +121,7 @@ public class Main {
             }
         });
 
+        // From the filtered list, write each track path to a .m3u8 file in the set destination with the set filename
         try (BufferedWriter fileWriter = Files.newBufferedWriter(destinationPath, StandardCharsets.UTF_8)) {
             for (Track track : tracks) {
                 fileWriter.write(track.getPath().toString() + "\r\n");
