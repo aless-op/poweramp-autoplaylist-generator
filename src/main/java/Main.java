@@ -49,7 +49,6 @@ public class Main {
             return;
         }
 
-        // Select music library folders - TODO: Ask to repeat selection to add multiple locations
         List<Path> library = new ArrayList<>();
         boolean addAnother;
         do {
