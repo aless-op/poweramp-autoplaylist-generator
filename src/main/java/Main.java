@@ -4,8 +4,6 @@ import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Arrays;
 
@@ -29,13 +27,40 @@ import org.jaudiotagger.tag.Tag;
 public class Main {
     public static void main(String[] args) {
 
-        // Define filename
         Scanner input = new Scanner(System.in);
+        JFileChooser chooser = new JFileChooser();
+
+        Path destinationPath = setDestination(input, chooser);
+        if (destinationPath == null) {
+            input.close();
+            return;
+        }
+
+        List<Path> library = setLibraryFolders(input, chooser);
+        if (library == null) {
+            input.close();
+            return;
+        }
+
+        List<Track> tracks = scanLibrary(library);
+        if (tracks == null) {
+            input.close();
+            return;
+        }
+        
+        List<Track> filteredTracks = filterTracks(tracks, input);
+
+        writePlaylist(destinationPath, filteredTracks);
+
+        input.close();
+    }
+
+    private static Path setDestination(Scanner input, JFileChooser chooser) {
+        // Define filename
         System.out.print("Enter the destination filename: ");
         String filename = input.nextLine() + ".m3u8";
 
         // Set output location
-        JFileChooser chooser = new JFileChooser();
         System.out.println("Choose the destination folder");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
@@ -44,11 +69,13 @@ public class Main {
         if (result == JFileChooser.APPROVE_OPTION) {
             Path destinationFolder = chooser.getSelectedFile().toPath();
             destinationPath = destinationFolder.resolve(filename);
+            return destinationPath;
         } else {
-            input.close();
-            return;
+            return null;
         }
+    }
 
+    private static List<Path> setLibraryFolders(Scanner input, JFileChooser chooser) {
         List<Path> library = new ArrayList<>();
         boolean addAnother;
         do {
@@ -60,8 +87,7 @@ public class Main {
                     Path libraryFolder = chooser.getSelectedFile().toPath();
                     library.add(libraryFolder);
                 } else {
-                    input.close();
-                    return;
+                    return null;
                 }
             } else {
                 System.out.println("Add another folder (1) or continue to scanning (2)");
@@ -74,8 +100,7 @@ public class Main {
                         Path libraryFolder = chooser.getSelectedFile().toPath();
                         library.add(libraryFolder);
                     } else {
-                        input.close();
-                        return;
+                        return null;
                     }
                 } else if (selection == 2) {
                     addAnother = false;
@@ -85,9 +110,10 @@ public class Main {
                 }
             }
         } while (addAnother);
-            
+        return library;
+    }
 
-
+    private static List<Track> scanLibrary(List<Path> library) {
         // Create list of Track objects with useful tags from every flac file in library - TODO: Allow different file formats (filter by format?)
         List<Track> tracks = new ArrayList<>();
         for (int i = 0; i < library.size(); i++) {
@@ -128,34 +154,40 @@ public class Main {
                 System.out.println(library.get(i) + " is not a valid path");
             }
         }
+        return tracks;
+    }
 
+    private static List<Track> filterTracks(List<Track> tracks, Scanner input) {
         // Start filtering: ask for attribute to filter and its value - TODO: Allow criteria combinations
-        Map<String, String> criteria = new HashMap<>();
-        System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
+
+        System.out.println("Select a filter type (path, artist, albumArtist, album, year, genre):");
         String type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+
         System.out.println("Enter the " + type + " to filer: ");
         String value = input.nextLine().trim();
-        criteria.put(type, value);
+
+
         String selectedType = type.replace(" ", "").toLowerCase(Locale.ROOT);
-        System.out.println(type + " - " + criteria.get(type));
-        input.close();
+        System.out.println(type + " - " + value);
 
         Field field = Arrays.stream(Track.class.getDeclaredFields())
             .filter(f -> f.getName().toLowerCase(Locale.ROOT).equals(selectedType))
             .findFirst()
             .orElseThrow();
 
-
         // Filter tracks list based on the criteria just specified
         tracks.removeIf(track -> {
             try {
-                return !field.get(track).toString().toLowerCase(Locale.ROOT).contains(criteria.get(selectedType).toLowerCase(Locale.ROOT));
+                return !field.get(track).toString().toLowerCase(Locale.ROOT).contains(value.toLowerCase(Locale.ROOT));
             } catch (IllegalAccessException e) {
                 // TODO: handle exception
                 return false;
             }
         });
+        return tracks;
+    }
 
+    private static void writePlaylist(Path destinationPath, List<Track> tracks) {
         // From the filtered list, write each track path to a .m3u8 file in the set destination with the set filename
         try (BufferedWriter fileWriter = Files.newBufferedWriter(destinationPath, StandardCharsets.UTF_8)) {
             for (Track track : tracks) {
@@ -167,6 +199,4 @@ public class Main {
         }
         System.out.println("Playlist created");
     }
-
-    
 }
