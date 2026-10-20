@@ -49,16 +49,45 @@ public class Main {
             return;
         }
 
-        System.out.println("Add a folder containing music files");
-
-
         // Select music library folders - TODO: Ask to repeat selection to add multiple locations
         List<Path> library = new ArrayList<>();
-        int folderSelection = chooser.showOpenDialog(null);
-        if (folderSelection == JFileChooser.APPROVE_OPTION) {
-            Path libraryFolder = chooser.getSelectedFile().toPath();
-            library.add(libraryFolder);
-        } else { input.close(); return;}
+        boolean addAnother;
+        do {
+            if (library.size() == 0) {
+                addAnother = true;
+                System.out.println("Add a folder containing music files");
+                int folderSelection = chooser.showOpenDialog(null);
+                if (folderSelection == JFileChooser.APPROVE_OPTION) {
+                    Path libraryFolder = chooser.getSelectedFile().toPath();
+                    library.add(libraryFolder);
+                } else {
+                    input.close();
+                    return;
+                }
+            } else {
+                System.out.println("Add another folder (1) or continue to scanning (2)");
+                int selection = input.nextInt();
+                input.nextLine();
+                if (selection == 1) {
+                    addAnother = true;
+                    int folderSelection = chooser.showOpenDialog(null);
+                    if (folderSelection == JFileChooser.APPROVE_OPTION) {
+                        Path libraryFolder = chooser.getSelectedFile().toPath();
+                        library.add(libraryFolder);
+                    } else {
+                        input.close();
+                        return;
+                    }
+                } else if (selection == 2) {
+                    addAnother = false;
+                } else {
+                    System.err.println("Invalid selection");
+                    addAnother = true;
+                }
+            }
+        } while (addAnother);
+            
+
 
         // Create list of Track objects with useful tags from every flac file in library - TODO: Allow different file formats (filter by format?)
         List<Track> tracks = new ArrayList<>();
@@ -139,4 +168,6 @@ public class Main {
         }
         System.out.println("Playlist created");
     }
+
+    
 }
