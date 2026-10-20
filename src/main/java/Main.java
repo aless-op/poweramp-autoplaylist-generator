@@ -4,6 +4,8 @@ import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Arrays;
 
@@ -90,7 +92,7 @@ public class Main {
                     return null;
                 }
             } else {
-                System.out.println("Add another folder (1) or continue to scanning (2)");
+                System.out.println("Add another folder (1) or continue to scanning (2)?");
                 int selection = input.nextInt();
                 input.nextLine();
                 if (selection == 1) {
@@ -158,32 +160,68 @@ public class Main {
     }
 
     private static List<Track> filterTracks(List<Track> tracks, Scanner input) {
+
+        Map<String, String> criteria = new HashMap<>();
+        boolean addAnother;
+        do {
+            if (criteria.isEmpty()) {
+                addAnother = true;
+
+                System.out.println("Select a filter type (path, artist, albumArtist, album, year, genre):");
+                String type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+
+                System.out.println("Enter the " + type + " to filer: ");
+                String value = input.nextLine().trim();
+
+                criteria.put(type, value);
+            } else {
+                System.out.println("Add another criterion (1) or proceed to filtering (2)?");
+                int selection = input.nextInt();
+                input.nextLine();
+                if (selection == 1) {
+                    addAnother = true;
+                    System.out.println("Select a filter type (path, artist, albumArtist, album, year, genre):");
+                    String type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+
+                    System.out.println("Enter the " + type + " to filer: ");
+                    String value = input.nextLine().trim();
+
+                    criteria.put(type, value);
+                } else if (selection == 2) {
+                    addAnother = false;
+                } else {
+                    System.err.println("Invalid selection");
+                    addAnother = true;
+
+                }
+            }
+        } while (addAnother);
+
         // Start filtering: ask for attribute to filter and its value - TODO: Allow criteria combinations
 
-        System.out.println("Select a filter type (path, artist, albumArtist, album, year, genre):");
-        String type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+        for (Map.Entry<String, String> criterion : criteria.entrySet()) {
+            String type = criterion.getKey();
+            String value = criterion.getValue();
+            
+            String selectedType = type.replace(" ", "").toLowerCase(Locale.ROOT);
+            System.out.println(type + " - " + value);
 
-        System.out.println("Enter the " + type + " to filer: ");
-        String value = input.nextLine().trim();
+            Field field = Arrays.stream(Track.class.getDeclaredFields())
+                .filter(f -> f.getName().toLowerCase(Locale.ROOT).equals(selectedType))
+                .findFirst()
+                .orElseThrow();
 
-
-        String selectedType = type.replace(" ", "").toLowerCase(Locale.ROOT);
-        System.out.println(type + " - " + value);
-
-        Field field = Arrays.stream(Track.class.getDeclaredFields())
-            .filter(f -> f.getName().toLowerCase(Locale.ROOT).equals(selectedType))
-            .findFirst()
-            .orElseThrow();
-
-        // Filter tracks list based on the criteria just specified
-        tracks.removeIf(track -> {
-            try {
-                return !field.get(track).toString().toLowerCase(Locale.ROOT).contains(value.toLowerCase(Locale.ROOT));
-            } catch (IllegalAccessException e) {
-                // TODO: handle exception
-                return false;
-            }
-        });
+            // Filter tracks list based on the criteria just specified
+            tracks.removeIf(track -> {
+                try {
+                    return !field.get(track).toString().toLowerCase(Locale.ROOT).contains(value.toLowerCase(Locale.ROOT));
+                } catch (IllegalAccessException e) {
+                    // TODO: handle exception
+                    return false;
+                }
+            });
+        }
+        
         return tracks;
     }
 
