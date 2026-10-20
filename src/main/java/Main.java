@@ -49,7 +49,7 @@ public class Main {
             input.close();
             return;
         }
-        
+
         List<Track> filteredTracks = filterTracks(tracks, input);
 
         writePlaylist(destinationPath, filteredTracks);
@@ -116,7 +116,8 @@ public class Main {
     }
 
     private static List<Track> scanLibrary(List<Path> library) {
-        // Create list of Track objects with useful tags from every flac file in library - TODO: Allow different file formats (filter by format?)
+        // Create list of Track objects with useful tags from every flac file in library
+        // - TODO: Allow different file formats (filter by format?)
         List<Track> tracks = new ArrayList<>();
         for (int i = 0; i < library.size(); i++) {
             if (Files.isDirectory(library.get(i))) {
@@ -161,6 +162,7 @@ public class Main {
 
     private static List<Track> filterTracks(List<Track> tracks, Scanner input) {
 
+        // Set criteria
         Map<String, String> criteria = new HashMap<>();
         boolean addAnother;
         do {
@@ -197,36 +199,36 @@ public class Main {
             }
         } while (addAnother);
 
-        // Start filtering: ask for attribute to filter and its value - TODO: Allow criteria combinations
-
+        // Start filtering
         for (Map.Entry<String, String> criterion : criteria.entrySet()) {
             String type = criterion.getKey();
             String value = criterion.getValue();
-            
+
             String selectedType = type.replace(" ", "").toLowerCase(Locale.ROOT);
             System.out.println(type + " - " + value);
 
             Field field = Arrays.stream(Track.class.getDeclaredFields())
-                .filter(f -> f.getName().toLowerCase(Locale.ROOT).equals(selectedType))
-                .findFirst()
-                .orElseThrow();
+                    .filter(f -> f.getName().toLowerCase(Locale.ROOT).equals(selectedType))
+                    .findFirst()
+                    .orElseThrow();
 
             // Filter tracks list based on the criteria just specified
             tracks.removeIf(track -> {
                 try {
-                    return !field.get(track).toString().toLowerCase(Locale.ROOT).contains(value.toLowerCase(Locale.ROOT));
+                    return !field.get(track).toString().toLowerCase(Locale.ROOT)
+                            .contains(value.toLowerCase(Locale.ROOT));
                 } catch (IllegalAccessException e) {
                     // TODO: handle exception
                     return false;
                 }
             });
         }
-        
         return tracks;
     }
 
     private static void writePlaylist(Path destinationPath, List<Track> tracks) {
-        // From the filtered list, write each track path to a .m3u8 file in the set destination with the set filename
+        // From the filtered list, write each track path to a .m3u8 file in the set
+        // destination with the set filename
         try (BufferedWriter fileWriter = Files.newBufferedWriter(destinationPath, StandardCharsets.UTF_8)) {
             for (Track track : tracks) {
                 fileWriter.write(track.getPath().toString() + "\r\n");
