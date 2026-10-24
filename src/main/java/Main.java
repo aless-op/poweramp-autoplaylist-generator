@@ -52,13 +52,13 @@ public class Main {
             return;
         }
 
+        input.close();
+
         List<Track> tracks = scanLibrary(library, criteria);
 
         List<Track> filteredTracks = filterTracks(tracks, criteria);
 
         writePlaylist(destinationPath, filteredTracks);
-
-        input.close();
     }
 
     private static Path setDestination(Scanner input, JFileChooser chooser) {
@@ -156,7 +156,7 @@ public class Main {
                 input.nextLine();
                 if (selection == 1) {
                     addAnother = true;
-                    
+
                     String type;
                     do {
                         System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
@@ -250,6 +250,7 @@ public class Main {
                 System.out.println(library.get(i) + " is not a valid path");
             }
         }
+        System.out.println("Found " + tracks.size() + " tracks");
         return tracks;
     }
 
@@ -280,14 +281,14 @@ public class Main {
         return filteredTracks;
     }
 
-    private static void writePlaylist(Path destinationPath, List<Track> tracks) {
+    private static void writePlaylist(Path destinationPath, List<Track> filteredTracks) {
         // From the filtered list, write each track path to a .m3u8 file in the set
         // destination with the set filename
         try (BufferedWriter fileWriter = Files.newBufferedWriter(destinationPath, StandardCharsets.UTF_8)) {
-            for (Track track : tracks) {
+            for (Track track : filteredTracks) {
                 fileWriter.write(track.getPath().toString() + "\r\n");
             }
-            System.out.println("Playlist created");
+            System.out.println("Playlist created with " + filteredTracks.size() + " tracks");
         } catch (IOException e) {
             System.err.println("An error occured");
             e.printStackTrace();

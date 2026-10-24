@@ -11,7 +11,8 @@
             "mainClass": "Main",
             "projectName": "poweramp-autoplaylist-generator",
             "vmArgs": "-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Djava.util.logging.config.file=logging.properties",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "encoding": "UTF-8"
         },
     ]
 }
