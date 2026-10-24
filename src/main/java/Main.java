@@ -1,5 +1,6 @@
 import java.util.stream.Stream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -27,6 +28,7 @@ import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagField;
 import org.jaudiotagger.tag.TagTextField;
+import org.jaudiotagger.tag.FieldKey;
 
 public class Main {
     public static void main(String[] args) {
@@ -122,21 +124,30 @@ public class Main {
     private static Map<String, List<String>> setCriteria(Scanner input) {
         Map<String, List<String>> criteria = new HashMap<>();
         boolean addAnother;
+        FieldKey[] attributes = FieldKey.values();
         do {
             if (criteria.isEmpty()) {
                 addAnother = true;
 
-                String type;
-                do {
-                    System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
-                    type = input.nextLine().trim().toLowerCase(Locale.ROOT);
-                } while (type.isEmpty());
-
-                List<String> values = criteria.computeIfAbsent(type, k -> new ArrayList<>());
-                String newValue;
                 boolean valid;
+                FieldKey type;
                 do {
-                    System.out.println("Enter the " + type + " to filter: ");
+                    System.out.println("Enter a Jaudiotagger-compatible attribute:");
+                    try {
+                        type = FieldKey.valueOf(input.nextLine().trim());
+                        valid = true;
+                    } catch (IllegalArgumentException e) {
+                        type = null;
+                        System.err.println("Please enter a valid attribute. Supported values are the following (Exact match):");
+                        System.out.println(Arrays.toString(attributes));
+                        valid = false;
+                    }
+                } while (!valid);
+
+                do {
+                    List<String> values = criteria.computeIfAbsent(type.name(), k -> new ArrayList<>());
+                    String newValue;
+                    System.out.println("Enter the " + type.name() + " to filter: ");
                     newValue = input.nextLine().trim();
                     if (newValue.isEmpty()) {
                         System.err.println("Value cannot be empty.");
@@ -157,17 +168,25 @@ public class Main {
                 if (selection == 1) {
                     addAnother = true;
 
-                    String type;
-                    do {
-                        System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
-                        type = input.nextLine().trim().toLowerCase(Locale.ROOT);
-                    } while (type.isEmpty());
-
-                    List<String> values = criteria.computeIfAbsent(type, k -> new ArrayList<>());
-                    String newValue;
                     boolean valid;
+                    FieldKey type;
                     do {
-                        System.out.println("Enter the " + type + " to filter: ");
+                        System.out.println("Enter a Jaudiotagger-compatible attribute:");
+                        try {
+                            type = FieldKey.valueOf(input.nextLine().trim());
+                            valid = true;
+                        } catch (IllegalArgumentException e) {
+                            type = null;
+                            System.err.println("Please enter a valid attribute. Supported values are the following:");
+                            System.out.println(Arrays.toString(attributes));
+                            valid = false;
+                        }
+                    } while (!valid);
+
+                    do {
+                        List<String> values = criteria.computeIfAbsent(type.name(), k -> new ArrayList<>());
+                        String newValue;
+                        System.out.println("Enter the " + type.name() + " to filter: ");
                         newValue = input.nextLine().trim();
                         if (newValue.isEmpty()) {
                             System.err.println("Value cannot be empty.");
