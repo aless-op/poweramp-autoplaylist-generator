@@ -126,15 +126,29 @@ public class Main {
             if (criteria.isEmpty()) {
                 addAnother = true;
 
-                System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
-                String type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+                String type;
+                do {
+                    System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
+                    type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+                } while (type.isEmpty());
 
-                System.out.println("Enter the " + type + " to filter: ");
-                List<String> value = criteria.computeIfAbsent(type, k -> new ArrayList<>());
-                String newValue = input.nextLine().trim();
-                if (!value.contains(newValue)) {
-                    value.add(newValue);
-                } else {System.out.println("Value already exists.");}
+                List<String> values = criteria.computeIfAbsent(type, k -> new ArrayList<>());
+                String newValue;
+                boolean valid;
+                do {
+                    System.out.println("Enter the " + type + " to filter: ");
+                    newValue = input.nextLine().trim();
+                    if (newValue.isEmpty()) {
+                        System.err.println("Value cannot be empty.");
+                        valid = false;
+                    } else if (values.contains(newValue)) {
+                        System.err.println("Value is already saved");
+                        valid = false;
+                    } else {
+                        values.add(newValue);
+                        valid = true;
+                    }
+                } while (!valid);
 
             } else {
                 System.out.println("Add another criterion (1) or proceed to filtering (2)?");
@@ -142,14 +156,30 @@ public class Main {
                 input.nextLine();
                 if (selection == 1) {
                     addAnother = true;
-                    System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
-                    String type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+                    
+                    String type;
+                    do {
+                        System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
+                        type = input.nextLine().trim().toLowerCase(Locale.ROOT);
+                    } while (type.isEmpty());
 
-                    System.out.println("Enter the " + type + " to filter: ");
-                    List<String> value = criteria.computeIfAbsent(type, k -> new ArrayList<>());
-                    value.add(input.nextLine().trim());
-
-                    criteria.put(type, value);
+                    List<String> values = criteria.computeIfAbsent(type, k -> new ArrayList<>());
+                    String newValue;
+                    boolean valid;
+                    do {
+                        System.out.println("Enter the " + type + " to filter: ");
+                        newValue = input.nextLine().trim();
+                        if (newValue.isEmpty()) {
+                            System.err.println("Value cannot be empty.");
+                            valid = false;
+                        } else if (values.contains(newValue)) {
+                            System.err.println("Value is already saved");
+                            valid = false;
+                        } else {
+                            values.add(newValue);
+                            valid = true;
+                        }
+                    } while (!valid);
                 } else if (selection == 2) {
                     addAnother = false;
                 } else {
@@ -163,7 +193,8 @@ public class Main {
     }
 
     private static List<Track> scanLibrary(List<Path> library, Map<String, List<String>> criteria) {
-        // Create list of Track objects with useful tags from every music file in library
+        // Create list of Track objects with useful tags from every music file in
+        // library
         Set<String> supportedFileFormats = new HashSet<>();
         for (SupportedFileFormat format : SupportedFileFormat.values()) {
             supportedFileFormats.add("." + format.getFilesuffix());
@@ -173,11 +204,11 @@ public class Main {
             if (Files.isDirectory(library.get(i))) {
                 try (Stream<Path> paths = Files.walk(library.get(i))) {
                     Stream<Path> audioPaths = paths
-                                .filter(Files::isRegularFile)
-                                .filter(path -> supportedFileFormats.stream()
+                            .filter(Files::isRegularFile)
+                            .filter(path -> supportedFileFormats.stream()
                                     .anyMatch(extension -> path.getFileName().toString()
-                                        .toLowerCase(Locale.ROOT)
-                                        .endsWith(extension)));
+                                            .toLowerCase(Locale.ROOT)
+                                            .endsWith(extension)));
                     Stream<File> audioFiles = audioPaths.map(Path::toFile);
                     audioFiles.forEach(file -> {
                         try {
@@ -223,6 +254,7 @@ public class Main {
     }
 
     private static List<Track> filterTracks(List<Track> tracks, Map<String, List<String>> criteria) {
+        List<Track> filteredTracks = new ArrayList<>(tracks);
         for (Map.Entry<String, List<String>> criterion : criteria.entrySet()) {
             String type = criterion.getKey();
             List<String> value = criterion.getValue();
@@ -231,17 +263,21 @@ public class Main {
             System.out.println(type + " - " + value);
 
             // Filter tracks list
-            tracks.removeIf(track -> {
+            filteredTracks.removeIf(track -> {
                 if (!selectedType.equals("path")) {
                     if (track.getTags().get(selectedType) != null) {
-                        return !track.getTags().get(selectedType).toLowerCase(Locale.ROOT).contains(value.toLowerCase(Locale.ROOT));
-                    } else {return true;}
+                        return !value.stream().anyMatch(tag -> track.getTags().get(selectedType)
+                                .toLowerCase(Locale.ROOT).contains(tag.toLowerCase(Locale.ROOT)));
+                    } else {
+                        return true;
+                    }
                 } else {
-                    return !(track.getPath().toString().toLowerCase(Locale.ROOT).contains(value.toLowerCase(Locale.ROOT)));
+                    return !value.stream().anyMatch(path -> track.getPath().toString().toLowerCase(Locale.ROOT)
+                            .contains(path.toLowerCase(Locale.ROOT)));
                 }
             });
         }
-        return tracks;
+        return filteredTracks;
     }
 
     private static void writePlaylist(Path destinationPath, List<Track> tracks) {
