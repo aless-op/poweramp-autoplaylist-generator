@@ -150,6 +150,18 @@ public class Main {
                     }
                 } while (!valid);
 
+                List<String> validMethods = List.of("contains", "exact match", "begins with", "ends with");
+                do {
+                    System.out.println("Enter the matching method:");
+                    String method = input.nextLine().trim();
+                    if (method.isEmpty()) {
+                        System.err.println("Value cannot be empty.");
+                        valid = false;
+                    } else if (validMethods.contains(method)) {
+                        
+                    }
+                } while (!valid);
+
             } else {
                 System.out.println("Add another criterion (1) or proceed to filtering (2)?");
                 int selection = input.nextInt();
