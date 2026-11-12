@@ -212,8 +212,7 @@ public class Main {
     }
 
     private static List<Track> scanLibrary(List<Path> library, Map<String, List<String>> criteria) {
-        // Create list of Track objects with useful tags from every music file in
-        // library
+        // Create list of Track objects with useful tags from every music file in library
         Set<String> supportedFileFormats = new HashSet<>();
         for (SupportedFileFormat format : SupportedFileFormat.values()) {
             supportedFileFormats.add("." + format.getFilesuffix());
@@ -273,6 +272,7 @@ public class Main {
         return tracks;
     }
 
+    //TODO: Make this method filter using FieldKey objects and merge branch
     private static List<Track> filterTracks(List<Track> tracks, Map<String, List<String>> criteria) {
         List<Track> filteredTracks = new ArrayList<>(tracks);
         for (Map.Entry<String, List<String>> criterion : criteria.entrySet()) {
