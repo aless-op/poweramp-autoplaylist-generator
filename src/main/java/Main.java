@@ -278,7 +278,7 @@ public class Main {
             System.out.println(type + " - " + value);
 
             filteredTracks.removeIf(track -> {
-                if (!type.equals("path")) {
+                if (!type.equals("PATH")) {
                     if (track.getTags().get(type) != null) {
                         return !value.stream().anyMatch(tag -> track.getTags().get(type)
                                 .toLowerCase(Locale.ROOT).contains(tag.toLowerCase(Locale.ROOT)));
