@@ -26,3 +26,6 @@ replay_pid*
 # output playlists
 *.m3u
 *.m3u8
+
+# testing material
+test-tracks/

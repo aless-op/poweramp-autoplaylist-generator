@@ -1,5 +1,6 @@
 import java.util.stream.Stream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -7,7 +8,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Iterator;
 
 import java.io.IOException;
 import java.io.BufferedWriter;
@@ -25,8 +25,8 @@ import org.jaudiotagger.audio.SupportedFileFormat;
 import org.jaudiotagger.audio.exceptions.*;
 import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.Tag;
-import org.jaudiotagger.tag.TagField;
-import org.jaudiotagger.tag.TagTextField;
+import org.jaudiotagger.tag.FieldKey;
+import org.jaudiotagger.tag.KeyNotFoundException;
 
 public class Main {
     public static void main(String[] args) {
@@ -122,21 +122,30 @@ public class Main {
     private static Map<String, List<String>> setCriteria(Scanner input) {
         Map<String, List<String>> criteria = new HashMap<>();
         boolean addAnother;
+        FieldKey[] attributes = FieldKey.values();
         do {
             if (criteria.isEmpty()) {
                 addAnother = true;
 
-                String type;
-                do {
-                    System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
-                    type = input.nextLine().trim().toLowerCase(Locale.ROOT);
-                } while (type.isEmpty());
-
-                List<String> values = criteria.computeIfAbsent(type, k -> new ArrayList<>());
-                String newValue;
                 boolean valid;
+                FieldKey type;
                 do {
-                    System.out.println("Enter the " + type + " to filter: ");
+                    System.out.println("Enter a Jaudiotagger-compatible attribute:");
+                    try {
+                        type = FieldKey.valueOf(input.nextLine().trim());
+                        valid = true;
+                    } catch (IllegalArgumentException e) {
+                        type = null;
+                        System.err.println("Please enter a valid attribute. Supported values are the following (Exact match):");
+                        System.out.println(Arrays.toString(attributes));
+                        valid = false;
+                    }
+                } while (!valid);
+
+                do {
+                    List<String> values = criteria.computeIfAbsent(type.name(), k -> new ArrayList<>());
+                    String newValue;
+                    System.out.println("Enter the " + type.name() + " to filter: ");
                     newValue = input.nextLine().trim();
                     if (newValue.isEmpty()) {
                         System.err.println("Value cannot be empty.");
@@ -169,17 +178,25 @@ public class Main {
                 if (selection == 1) {
                     addAnother = true;
 
-                    String type;
-                    do {
-                        System.out.println("Select a filter type (path, artist, albumartist, album, year, genre):");
-                        type = input.nextLine().trim().toLowerCase(Locale.ROOT);
-                    } while (type.isEmpty());
-
-                    List<String> values = criteria.computeIfAbsent(type, k -> new ArrayList<>());
-                    String newValue;
                     boolean valid;
+                    FieldKey type;
                     do {
-                        System.out.println("Enter the " + type + " to filter: ");
+                        System.out.println("Enter a Jaudiotagger-compatible attribute:");
+                        try {
+                            type = FieldKey.valueOf(input.nextLine().trim());
+                            valid = true;
+                        } catch (IllegalArgumentException e) {
+                            type = null;
+                            System.err.println("Please enter a valid attribute. Supported values are the following:");
+                            System.out.println(Arrays.toString(attributes));
+                            valid = false;
+                        }
+                    } while (!valid);
+
+                    do {
+                        List<String> values = criteria.computeIfAbsent(type.name(), k -> new ArrayList<>());
+                        String newValue;
+                        System.out.println("Enter the " + type.name() + " to filter: ");
                         newValue = input.nextLine().trim();
                         if (newValue.isEmpty()) {
                             System.err.println("Value cannot be empty.");
@@ -205,8 +222,7 @@ public class Main {
     }
 
     private static List<Track> scanLibrary(List<Path> library, Map<String, List<String>> criteria) {
-        // Create list of Track objects with useful tags from every music file in
-        // library
+        // Create list of Track objects only with useful tags from every music file in library
         Set<String> supportedFileFormats = new HashSet<>();
         for (SupportedFileFormat format : SupportedFileFormat.values()) {
             supportedFileFormats.add("." + format.getFilesuffix());
@@ -227,17 +243,16 @@ public class Main {
                             AudioFile f = AudioFileIO.read(file);
                             Tag tag = f.getTag();
                             Map<String, String> tags = new HashMap<>();
-                            Iterator<TagField> fields;
                             Track track;
                             if (tag != null) {
-                                fields = tag.getFields();
-                                while (fields.hasNext()) {
-                                    TagField field = fields.next();
-                                    if (criteria.containsKey(field.getId().toLowerCase(Locale.ROOT))) {
-                                        if (field instanceof TagTextField textField) {
-                                            String value = textField.getContent();
-                                            tags.put(field.getId().toLowerCase(Locale.ROOT), value);
+                                for (String key : criteria.keySet()) {
+                                    try {
+                                        String value = tag.getFirst(FieldKey.valueOf(key));
+                                        if (!value.isEmpty()) {
+                                            tags.put(key, value);
                                         }
+                                    } catch (KeyNotFoundException e) {
+                                        System.err.println(e);
                                     }
                                 }
                             }
@@ -246,13 +261,13 @@ public class Main {
                         } catch (CannotReadException e) {
                             System.err.println(file + " couldn't be read");
                         } catch (IOException e) {
-                            System.err.println(e);
+                            System.err.println("Error with file " + file + ": " + e.getMessage());
                         } catch (TagException e) {
-                            System.err.println(e);
+                            System.err.println("Error with tags on file " + file + ": " + e.getMessage());
                         } catch (ReadOnlyFileException e) {
                             System.err.println(file + " is a read only file");
                         } catch (InvalidAudioFrameException e) {
-                            System.err.println(e);
+                            System.err.println("Error with audio on file " + file + ": " + e.getMessage());
                         }
                     });
                 } catch (IOException e) {
@@ -272,14 +287,12 @@ public class Main {
             String type = criterion.getKey();
             List<String> value = criterion.getValue();
 
-            String selectedType = type.toLowerCase(Locale.ROOT);
             System.out.println(type + " - " + value);
 
-            // Filter tracks list
             filteredTracks.removeIf(track -> {
-                if (!selectedType.equals("path")) {
-                    if (track.getTags().get(selectedType) != null) {
-                        return !value.stream().anyMatch(tag -> track.getTags().get(selectedType)
+                if (!type.equals("path")) {
+                    if (track.getTags().get(type) != null) {
+                        return !value.stream().anyMatch(tag -> track.getTags().get(type)
                                 .toLowerCase(Locale.ROOT).contains(tag.toLowerCase(Locale.ROOT)));
                     } else {
                         return true;
