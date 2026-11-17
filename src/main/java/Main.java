@@ -8,9 +8,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Iterator;
 
 import java.io.IOException;
+//import java.lang.reflect.Field;
 import java.io.BufferedWriter;
 import java.io.File;
 
@@ -26,9 +26,10 @@ import org.jaudiotagger.audio.SupportedFileFormat;
 import org.jaudiotagger.audio.exceptions.*;
 import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.Tag;
-import org.jaudiotagger.tag.TagField;
-import org.jaudiotagger.tag.TagTextField;
+//import org.jaudiotagger.tag.TagField;
+//import org.jaudiotagger.tag.TagTextField;
 import org.jaudiotagger.tag.FieldKey;
+import org.jaudiotagger.tag.KeyNotFoundException;
 
 public class Main {
     public static void main(String[] args) {
@@ -212,7 +213,7 @@ public class Main {
     }
 
     private static List<Track> scanLibrary(List<Path> library, Map<String, List<String>> criteria) {
-        // Create list of Track objects with useful tags from every music file in library
+        // Create list of Track objects only with useful tags from every music file in library
         Set<String> supportedFileFormats = new HashSet<>();
         for (SupportedFileFormat format : SupportedFileFormat.values()) {
             supportedFileFormats.add("." + format.getFilesuffix());
@@ -233,17 +234,16 @@ public class Main {
                             AudioFile f = AudioFileIO.read(file);
                             Tag tag = f.getTag();
                             Map<String, String> tags = new HashMap<>();
-                            Iterator<TagField> fields;
                             Track track;
                             if (tag != null) {
-                                fields = tag.getFields();
-                                while (fields.hasNext()) {
-                                    TagField field = fields.next();
-                                    if (criteria.containsKey(field.getId().toLowerCase(Locale.ROOT))) {
-                                        if (field instanceof TagTextField textField) {
-                                            String value = textField.getContent();
-                                            tags.put(field.getId().toLowerCase(Locale.ROOT), value);
+                                for (String key : criteria.keySet()) {
+                                    try {
+                                        String value = tag.getFirst(FieldKey.valueOf(key));
+                                        if (!value.isEmpty()) {
+                                            tags.put(key, value);
                                         }
+                                    } catch (KeyNotFoundException e) {
+                                        System.err.println(e);
                                     }
                                 }
                             }
@@ -267,6 +267,9 @@ public class Main {
             } else {
                 System.out.println(library.get(i) + " is not a valid path");
             }
+        }
+        for (Track track : tracks) {
+            System.out.println(track.getTags());
         }
         System.out.println("Found " + tracks.size() + " tracks");
         return tracks;
