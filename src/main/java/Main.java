@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.Locale;
 
 import java.io.IOException;
-//import java.lang.reflect.Field;
 import java.io.BufferedWriter;
 import java.io.File;
 
@@ -26,8 +25,6 @@ import org.jaudiotagger.audio.SupportedFileFormat;
 import org.jaudiotagger.audio.exceptions.*;
 import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.Tag;
-//import org.jaudiotagger.tag.TagField;
-//import org.jaudiotagger.tag.TagTextField;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.KeyNotFoundException;
 
@@ -252,13 +249,13 @@ public class Main {
                         } catch (CannotReadException e) {
                             System.err.println(file + " couldn't be read");
                         } catch (IOException e) {
-                            System.err.println(e);
+                            System.err.println("Error with file " + file + ": " + e.getMessage());
                         } catch (TagException e) {
-                            System.err.println(e);
+                            System.err.println("Error with tags on file " + file + ": " + e.getMessage());
                         } catch (ReadOnlyFileException e) {
                             System.err.println(file + " is a read only file");
                         } catch (InvalidAudioFrameException e) {
-                            System.err.println(e);
+                            System.err.println("Error with audio on file " + file + ": " + e.getMessage());
                         }
                     });
                 } catch (IOException e) {
@@ -268,28 +265,22 @@ public class Main {
                 System.out.println(library.get(i) + " is not a valid path");
             }
         }
-        for (Track track : tracks) {
-            System.out.println(track.getTags());
-        }
         System.out.println("Found " + tracks.size() + " tracks");
         return tracks;
     }
 
-    //TODO: Make this method filter using FieldKey objects and merge branch
     private static List<Track> filterTracks(List<Track> tracks, Map<String, List<String>> criteria) {
         List<Track> filteredTracks = new ArrayList<>(tracks);
         for (Map.Entry<String, List<String>> criterion : criteria.entrySet()) {
             String type = criterion.getKey();
             List<String> value = criterion.getValue();
 
-            String selectedType = type.toLowerCase(Locale.ROOT);
             System.out.println(type + " - " + value);
 
-            // Filter tracks list
             filteredTracks.removeIf(track -> {
-                if (!selectedType.equals("path")) {
-                    if (track.getTags().get(selectedType) != null) {
-                        return !value.stream().anyMatch(tag -> track.getTags().get(selectedType)
+                if (!type.equals("path")) {
+                    if (track.getTags().get(type) != null) {
+                        return !value.stream().anyMatch(tag -> track.getTags().get(type)
                                 .toLowerCase(Locale.ROOT).contains(tag.toLowerCase(Locale.ROOT)));
                     } else {
                         return true;
